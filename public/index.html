@@ -1,0 +1,54 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة التحكم</title>
+<style>
+  :root{color-scheme:light dark}
+  body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 14px}
+  h1{font-size:20px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{border:1px solid #8884;border-radius:12px;padding:14px;text-align:center}
+  .score{font-size:64px;font-weight:800;line-height:1.1}
+  input[type=text],input[type=password]{width:100%;box-sizing:border-box;padding:8px;font-size:16px;margin-bottom:8px}
+  input[type=color]{width:100%;height:36px;border:0;padding:0;margin-bottom:8px}
+  button{font-size:22px;padding:10px 0;width:48%;border-radius:8px;border:1px solid #8886;cursor:pointer}
+  .full{width:100%;margin-top:12px;font-size:16px}
+  small{opacity:.7;display:block;margin-top:14px;line-height:1.7}
+  #msg{color:#e33;min-height:1.4em}
+</style></head><body>
+<h1>⚽ لوحة التحكم في النتيجة</h1>
+<input type="password" id="pw" placeholder="كلمة السر" oninput="localStorage.pw=this.value">
+<div id="msg"></div>
+<div class="row" id="row"></div>
+<button class="full" onclick="swap()">🔄 تبديل الفريقين</button>
+<button class="full" onclick="resetAll()">♻️ تصفير النتيجة</button>
+<small>اختصارات: ‎Q / A ‎= فريق 1 (+/−) ، ‎P / L ‎= فريق 2 (+/−)<br>
+رابط العرض لـ TikTok: <b id="link"></b></small>
+<script>
+  let S=null;
+  pw.value=localStorage.pw||'';
+  async function send(){
+    const r=await fetch('/api/state',{method:'POST',headers:{'x-password':pw.value,'Content-Type':'application/json'},body:JSON.stringify(S)});
+    msg.textContent=r.ok?'':'كلمة السر غلط أو الإعداد ناقص';
+  }
+  function build(){
+    row.innerHTML='';
+    for(const k of ['a','b']){
+      const d=document.createElement('div');d.className='card';
+      d.innerHTML=`<input type="text" value="${S[k].name}" oninput="S.${k}.name=this.value;send()">
+      <input type="color" value="${S[k].color}" oninput="S.${k}.color=this.value;send()">
+      <div class="score" id="sc${k}">${S[k].score}</div>
+      <button onclick="add('${k}',1)">+</button> <button onclick="add('${k}',-1)">−</button>`;
+      row.appendChild(d);
+    }
+  }
+  function add(k,n){S[k].score=Math.max(0,S[k].score+n);document.getElementById('sc'+k).textContent=S[k].score;send()}
+  function swap(){[S.a,S.b]=[S.b,S.a];build();send()}
+  function resetAll(){S.a.score=S.b.score=0;build();send()}
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'&&e.target.type!=='color')return;
+    const m={q:['a',1],a:['a',-1],p:['b',1],l:['b',-1]}[e.key.toLowerCase()];
+    if(m&&S)add(...m);
+  });
+  link.textContent=location.origin+'/overlay.html';
+  fetch('/api/state',{cache:'no-store'}).then(r=>r.json()).then(s=>{S=s;build()});
+</script></body></html>
