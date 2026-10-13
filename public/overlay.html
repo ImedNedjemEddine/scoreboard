@@ -1,0 +1,39 @@
+<!doctype html><html lang="ar"><head><meta charset="utf-8">
+<title>Overlay</title>
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden}
+  #bar{display:flex;align-items:stretch;width:640px;height:64px;margin:8px;
+       font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#fff;border-radius:12px;
+       overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  .team{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;
+        font-size:26px;font-weight:700;padding:0 12px;white-space:nowrap;overflow:hidden;background:#555}
+  .dot{width:12px;height:12px;border-radius:50%;background:#ffd400;flex:none}
+  #mid{display:flex;align-items:center;justify-content:center;gap:14px;min-width:150px;
+       background:#111;font-size:38px;font-weight:800;direction:ltr;padding:0 18px}
+  #mid span{display:inline-block;min-width:26px;text-align:center}
+  .pop{animation:pop .5s}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.6);color:#ffd400}100%{transform:scale(1)}}
+</style></head><body>
+<div id="bar">
+  <div class="team" id="ta"><i class="dot"></i><b id="na"></b></div>
+  <div id="mid"><span id="sa">0</span><span>-</span><span id="sb">0</span></div>
+  <div class="team" id="tb"><b id="nb"></b><i class="dot"></i></div>
+</div>
+<script>
+  let prev=null;
+  function bump(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
+  function render(s){
+    for(const k of ['a','b']){
+      document.getElementById('n'+k).textContent=s[k].name;
+      document.getElementById('t'+k).style.background=s[k].color;
+      const el=document.getElementById('s'+k);
+      el.textContent=s[k].score;
+      if(prev&&s[k].score!==prev[k]) bump(el);
+    }
+    prev={a:s.a.score,b:s.b.score};
+  }
+  async function tick(){
+    try{render(await (await fetch('/api/state',{cache:'no-store'})).json())}catch(e){}
+  }
+  tick(); setInterval(tick,1000);
+</script></body></html>
