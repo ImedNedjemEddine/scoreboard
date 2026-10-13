@@ -28,7 +28,9 @@
   pw.value=localStorage.pw||'';
   async function send(){
     const r=await fetch('/api/state',{method:'POST',headers:{'x-password':pw.value,'Content-Type':'application/json'},body:JSON.stringify(S)});
-    msg.textContent=r.ok?'':'كلمة السر غلط أو الإعداد ناقص';
+    if(r.status===401) msg.textContent='كلمة السر غلط، أو CONTROL_PASSWORD غير مضاف / لم تعمل Redeploy';
+    else if(!r.ok) msg.textContent='خطأ في الحفظ: '+(await r.text());
+    else msg.textContent='';
   }
   function build(){
     row.innerHTML='';
@@ -50,5 +52,8 @@
     if(m&&S)add(...m);
   });
   link.textContent=location.origin+'/overlay.html';
-  fetch('/api/state',{cache:'no-store'}).then(r=>r.json()).then(s=>{S=s;build()});
+  fetch('/api/state',{cache:'no-store'}).then(r=>r.json()).then(s=>{
+    if(!s.a){msg.textContent='خطأ في السيرفر: '+(s.error||'غير معروف')+' — تأكد من إضافة Upstash وعمل Redeploy';return}
+    S=s;build();
+  }).catch(e=>{msg.textContent='تعذّر الاتصال بـ /api/state: '+e});
 </script></body></html>
